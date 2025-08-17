@@ -18,11 +18,9 @@
 
 - [🎯 Overview](#-overview)
 - [✨ Features](#-features)
-- [🚀 Quick Start](#-quick-start)
 - [💾 Installation Methods](#-installation-methods)
 - [🎮 How to Use](#-how-to-use)
 - [🔧 Configuration](#-configuration)
-- [📱 Desktop Integration](#-desktop-integration)
 - [🛠️ Troubleshooting](#️-troubleshooting)
 - [📁 Project Structure](#-project-structure)
 - [⚠️ Security & Legal](#️-security--legal)
