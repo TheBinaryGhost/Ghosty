@@ -87,9 +87,24 @@ print_step "4. Setting up Ghosty installation..."
 # Create installation directory
 sudo mkdir -p "$INSTALL_DIR"
 
-# Copy Ghosty files to installation directory
-print_status "Copying files to $INSTALL_DIR"
-sudo cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
+# Copy essential Python files to installation directory
+print_status "Copying Python files to $INSTALL_DIR"
+sudo cp "$SCRIPT_DIR/main.py" "$INSTALL_DIR/"
+sudo cp "$SCRIPT_DIR/gui.py" "$INSTALL_DIR/"
+sudo cp "$SCRIPT_DIR/macchanger.py" "$INSTALL_DIR/"
+sudo cp "$SCRIPT_DIR/vpn.py" "$INSTALL_DIR/"
+sudo cp "$SCRIPT_DIR/tor.py" "$INSTALL_DIR/"
+sudo cp "$SCRIPT_DIR/utils.py" "$INSTALL_DIR/"
+sudo cp "$SCRIPT_DIR/requirements.txt" "$INSTALL_DIR/"
+
+# Copy additional files if they exist
+if [[ -f "$SCRIPT_DIR/README.md" ]]; then
+    sudo cp "$SCRIPT_DIR/README.md" "$INSTALL_DIR/"
+fi
+
+if [[ -f "$SCRIPT_DIR/LICENSE" ]]; then
+    sudo cp "$SCRIPT_DIR/LICENSE" "$INSTALL_DIR/"
+fi
 
 # Make Python files executable
 sudo chmod +x "$INSTALL_DIR/main.py"
