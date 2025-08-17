@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ghosty Anonymizer
+Comment=Linux system anonymization tool with MAC spoofing, VPN, and TOR
+Exec=pkexec python3 /opt/ghosty/main.py
+Icon=ghosty
+Terminal=false
+StartupNotify=true
+Categories=Network;Security;
+Keywords=anonymizer;privacy;tor;vpn;mac;security;
+StartupWMClass=ghosty
+MimeType=
+Actions=
+
+[Desktop Action new-window]
+Name=New Window
+Exec=pkexec python3 /opt/ghosty/main.py
+Icon=ghosty
