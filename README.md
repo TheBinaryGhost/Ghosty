@@ -69,7 +69,7 @@ Ghosty is a modular, GUI-based anonymization tool designed for Linux systems. It
 
 ### ⚡ Fastest Method (One Command)
 ```bash
-git clone <your-repo-url> && cd Ghosty && chmod +x install.sh && ./install.sh
+git clone https://github.com/TheBinaryGhost/Ghosty && cd Ghosty && chmod +x install.sh && ./install.sh
 ```
 
 ### 🎯 After Installation
@@ -87,7 +87,7 @@ git clone <your-repo-url> && cd Ghosty && chmod +x install.sh && ./install.sh
 
 ```bash
 # Clone repository
-git clone <your-repo-url>
+git clone https://github.com/TheBinaryGhost/Ghosty
 cd Ghosty
 
 # Run installer (asks for sudo password)
@@ -395,7 +395,7 @@ Ghosty/
 
 ### 📜 Disclaimer
 
-**Important:** The developers of Ghosty are not responsible for any misuse of this tool. Users must ensure compliance with all applicable laws and regulations. This tool is provided for educational and legitimate security testing purposes only.
+**Important:** The developer of Ghosty are not responsible for any misuse of this tool. Users must ensure compliance with all applicable laws and regulations. This tool is provided for educational and legitimate security testing purposes only.
 
 **Use Responsibly:** Only use Ghosty on systems you own or have explicit written permission to test.
 
