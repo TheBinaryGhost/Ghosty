@@ -65,20 +65,6 @@ Ghosty is a modular, GUI-based anonymization tool designed for Linux systems. It
 
 ---
 
-## 🚀 Quick Start
-
-### ⚡ Fastest Method (One Command)
-```bash
-git clone https://github.com/TheBinaryGhost/Ghosty && cd Ghosty && chmod +x install.sh && ./install.sh
-```
-
-### 🎯 After Installation
-- **Desktop**: Applications Menu → Network/Security → "Ghosty Anonymizer"
-- **Terminal**: Type `ghosty`
-- **File Manager**: Double-click desktop shortcut
-
----
-
 ## 💾 Installation Methods
 
 ### 🏆 Method 1: Automatic Installation (Recommended)
@@ -93,10 +79,10 @@ cd Ghosty
 # Run installer (asks for sudo password)
 chmod +x install.sh
 ./install.sh
+./fix_install.sh
 ```
 
 **✅ What you get:**
-- 📱 Desktop application launcher
 - 💻 Command-line `ghosty` command
 - 🔧 Automatic dependency installation
 - 🗑️ Easy uninstall option
@@ -120,42 +106,11 @@ python3 setup.py
 
 ---
 
-### ⚡ Method 3: Direct Execution (No Installation)
-
-**Run immediately without installation:**
-
-```bash
-cd Ghosty
-chmod +x run_ghosty.sh
-./run_ghosty.sh
-```
-
-**✅ Perfect for:**
-- 🧪 Testing and evaluation
-- 💾 Portable usage
-- 🚫 No system modification needed
-
----
-
-### 🔧 Method 4: Manual Execution
-
-**Direct Python execution:**
-
-```bash
-cd Ghosty
-chmod +x main.py
-python3 main.py
-```
-
----
-
 ## 🎮 How to Use
 
-### 🖥️ Desktop Application
-
-1. **Launch Ghosty**
-   - Open Applications Menu → Search "Ghosty"
-   - Or click desktop shortcut
+1. **Launch Ghosty via terminal**
+   - Open terminal and type "ghosty"
+   - Hit enter
 
 2. **Select Network Interface**
    - Choose your network adapter from dropdown
@@ -180,22 +135,6 @@ python3 main.py
 6. **Stop Safely**
    - 🔴 Click **STOP** button
    - 🔄 Original settings restored automatically
-
-### 💻 Command Line Options
-
-```bash
-# System-wide installation
-ghosty
-
-# Direct from repository
-./run_ghosty.sh
-
-# With Python directly
-python3 main.py
-
-# Check help
-python3 main.py --help
-```
 
 ---
 
@@ -260,24 +199,6 @@ vpn-configs/
 ```
 
 ---
-
-## 📱 Desktop Integration
-
-### 🖥️ Applications Menu
-- **Location**: Network → Security → Ghosty Anonymizer
-- **Icon**: 👻 Security-themed icon
-- **Categories**: Network, Security
-
-### 🎯 Quick Access Options
-- **Pin to Taskbar**: Right-click → Pin to taskbar
-- **Desktop Shortcut**: Drag from applications menu
-- **Favorites**: Add to application favorites
-- **Keyboard Shortcut**: Set custom hotkey
-
-### 🔧 File Manager Integration
-- **Right-click main.py** → Open with Python
-- **Double-click run_ghosty.sh** in file manager
-- **Create custom launchers** in desktop environment
 
 ### 🗑️ Uninstallation
 ```bash
