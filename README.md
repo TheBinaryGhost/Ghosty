@@ -1,333 +1,206 @@
-# 👻 Ghosty - Linux System Anonymizer
+# Ghosty v2 — Linux Anonymizer
 
 <div align="center">
 
-**A comprehensive Python-based anonymization tool for Linux systems**
+**A modern Python anonymizer for Linux with CustomTkinter GUI**
 
-[![Python](https://img.shields.io/badge/Python-3.6+-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://www.linux.org/)
 
-*Professional-grade anonymization with MAC spoofing, VPN, and TOR integration*
+*MAC spoofing, VPN, TOR — one click, three levels of privacy*
 
 </div>
 
 ---
 
-## 📖 Table of Contents
+## Overview
 
-- [🎯 Overview](#-overview)
-- [✨ Features](#-features)
-- [💾 Installation Methods](#-installation-methods)
-- [🎮 How to Use](#-how-to-use)
-- [🔧 Configuration](#-configuration)
-- [🛠️ Troubleshooting](#️-troubleshooting)
-- [📁 Project Structure](#-project-structure)
-- [⚠️ Security & Legal](#️-security--legal)
+Ghosty is a modular, GUI-based anonymization tool for Linux. It provides three levels of protection:
+
+- **MAC Spoofing** — Randomize your hardware address
+- **VPN** — Encrypted tunnel (OpenVPN + WireGuard)
+- **TOR** — Anonymous routing with IP rotation
 
 ---
 
-## 🎯 Overview
+## Features
 
-Ghosty is a modular, GUI-based anonymization tool designed for Linux systems. It provides three levels of anonymization protection:
+### Anonymization Modes
 
-- **🔄 MAC Address Spoofing** - Change hardware identifiers
-- **🌐 VPN Integration** - Encrypted tunnel connections  
-- **🧅 TOR Network** - Anonymous browsing with IP rotation
-
-**Perfect for:** Privacy researchers, security professionals, penetration testers, and privacy-conscious users.
-
----
-
-## ✨ Features
-
-### 🛡️ Three Anonymization Modes
-| Mode | MAC Spoofing | VPN | TOR | IP Rotation |
-|------|-------------|-----|-----|------------|
+| Mode | MAC | VPN | TOR | IP Rotation |
+|------|-----|-----|-----|-------------|
 | **Normal** | ✅ | ❌ | ❌ | ❌ |
 | **Standard** | ✅ | ✅ | ❌ | ❌ |
 | **Enhanced** | ✅ | ✅ | ✅ | ✅ |
 
-### 🎨 User Experience
-- **🖥️ Modern GUI** - Clean, intuitive Tkinter interface
-- **📊 Real-time Monitoring** - Live IP/MAC address display
-- **📝 Activity Logging** - Comprehensive operation logs
-- **🔄 Safe Restoration** - Automatic rollback of changes
-- **🎯 One-Click Operation** - Simple start/stop controls
+### Technical Highlights
 
-### 🏗️ Technical Excellence
-- **📦 Modular Architecture** - Well-organized, maintainable code
-- **🔐 Secure Execution** - Proper privilege handling with pkexec
-- **🐧 Linux Optimized** - Native system integration
-- **⚡ Efficient Performance** - Minimal resource usage
+- **Modern GUI** — CustomTkinter with dark/light themes
+- **Crash-safe** — atexit + signal handlers restore state on unexpected exit
+- **Multi-VPN** — OpenVPN and WireGuard support
+- **Distro detection** — apt/dnf/pacman/zypper abstraction
+- **TOML config** — Persistent preferences at `~/.config/ghosty/config.toml`
+- **Thread-safe** — Background operations with UI updates on main thread
 
 ---
 
-## 💾 Installation Methods
+## Installation
 
-### 🏆 Method 1: Automatic Installation (Recommended)
-
-**Full system integration with desktop launcher:**
+### Quick Install (pip)
 
 ```bash
-# Clone repository
 git clone https://github.com/TheBinaryGhost/Ghosty
 cd Ghosty
-
-# Run installer (asks for sudo password)
-chmod +x install.sh
-./install.sh
-./fix_install.sh
+pip install -e .
 ```
 
-**✅ What you get:**
-- 💻 Command-line `ghosty` command
-- 🔧 Automatic dependency installation
-- 🗑️ Easy uninstall option
+### Development Install
+
+```bash
+pip install -e ".[dev]"
+```
+
+### System Dependencies
+
+```bash
+# Ubuntu/Debian
+sudo apt install macchanger openvpn tor
+
+# Fedora
+sudo dnf install macchanger openvpn tor
+
+# Arch
+sudo pacman -S macchanger openvpn tor
+```
 
 ---
 
-### 🐍 Method 2: Python Setup Script
+## Usage
 
-**Alternative installer with Python:**
+### Launch GUI
 
 ```bash
-cd Ghosty
-chmod +x setup.py
-python3 setup.py
+# Via entry point
+ghosty
+
+# Or via module
+python -m ghosty
 ```
 
-**✅ Benefits:**
-- 🔍 Better error reporting
-- 🐍 Python-native installation
-- 📋 Detailed dependency checking
+### Steps
+
+1. **Select Interface** — Choose your network adapter
+2. **Choose Mode** — Normal / Standard / Enhanced
+3. **Configure VPN** (Standard/Enhanced) — Browse for `.ovpn` or `.conf`
+4. **Start** — Click the green button
+5. **Stop** — Click red to restore original settings
 
 ---
 
-## 🎮 How to Use
+## Project Structure
 
-1. **Launch Ghosty via terminal**
-   - Open terminal and type "ghosty"
-   - Hit enter
-
-2. **Select Network Interface**
-   - Choose your network adapter from dropdown
-   - Current MAC address displays automatically
-
-3. **Choose Anonymization Mode**
-   ```
-   Normal Mode    → MAC spoofing only
-   Standard Mode  → MAC + VPN connection  
-   Enhanced Mode  → MAC + VPN + TOR with IP rotation
-   ```
-
-4. **Configure VPN (Standard/Enhanced)**
-   - 📁 Browse for `.ovpn` configuration file
-   - 🔑 Select authentication file (optional)
-
-5. **Start Anonymization**
-   - 🟢 Click **START** button
-   - 📊 Monitor real-time IP/MAC changes
-   - 📝 Check activity log for status
-
-6. **Stop Safely**
-   - 🔴 Click **STOP** button
-   - 🔄 Original settings restored automatically
+```
+src/ghosty/
+├── __init__.py          # Package root
+├── __main__.py          # Entry point
+├── app.py               # GUI launcher
+├── config.py            # TOML config system
+├── logger.py            # Structured logging
+├── utils/
+│   ├── process.py       # Safe subprocess wrapper
+│   ├── network.py       # IP/interface utilities
+│   └── platform.py      # Distro detection
+├── core/
+│   ├── mac.py           # MAC spoofing
+│   ├── vpn.py           # OpenVPN + WireGuard
+│   ├── tor.py           # TOR + IP rotation
+│   └── orchestrator.py  # Mode coordinator
+└── gui/
+    ├── status_panel.py      # Status display
+    ├── interface_panel.py   # Interface selector
+    ├── mode_panel.py        # Mode selector
+    ├── vpn_panel.py         # VPN config picker
+    ├── control_panel.py     # Start/Stop
+    ├── log_panel.py         # Activity log
+    ├── settings_dialog.py   # Preferences
+    └── main_window.py       # Main assembly
+```
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
-### 📋 System Requirements
+Config is stored at `~/.config/ghosty/config.toml`:
 
-| Component | Requirement |
-|-----------|-------------|
-| **OS** | Linux (Ubuntu/Debian recommended) |
-| **Python** | 3.6+ |
-| **Privileges** | Root access (auto-requested) |
-| **Memory** | 50MB+ available |
-
-### 🛠️ Dependencies
-
-**System Packages:**
-```bash
-sudo apt update
-sudo apt install macchanger openvpn tor python3-pip python3-tk
+```toml
+theme = "dark"
+language = "en"
+vpn_interface = "tun0"
+tor_socks_port = 9051
+auto_connect = false
 ```
 
-**Python Modules:**
-```bash
-pip3 install requests psutil
+### TOR Setup (Enhanced Mode)
+
+Edit `/etc/tor/torrc`:
 ```
-
-### ⚙️ TOR Configuration (Enhanced Mode)
-
-**Edit TOR configuration:**
-```bash
-sudo nano /etc/tor/torrc
-```
-
-**Add these lines:**
-```ini
 ControlPort 9051
 CookieAuthentication 0
 ```
 
-**Restart TOR service:**
+Restart:
 ```bash
 sudo systemctl restart tor
-sudo systemctl enable tor
-```
-
-### 📁 VPN Setup
-
-**Prepare files:**
-- 📄 `.ovpn` configuration file
-- 🔑 Authentication file (username/password)
-- 🗝️ Certificate files (if required)
-
-**Example VPN file structure:**
-```
-vpn-configs/
-├── config.ovpn
-├── auth.txt
-└── certificates/
-    ├── ca.crt
-    └── client.key
 ```
 
 ---
 
-### 🗑️ Uninstallation
+## Development
+
+### Run Tests
+
 ```bash
-# Automatic uninstall
-sudo /opt/ghosty/uninstall.sh
+pytest
+```
 
-# Manual cleanup
-sudo rm -rf /opt/ghosty
-sudo rm -f /usr/share/applications/ghosty.desktop
-sudo rm -f /usr/local/bin/ghosty
+### Lint
+
+```bash
+ruff check src/ tests/
+```
+
+### Type Check
+
+```bash
+mypy src/ghosty/ --ignore-missing-imports
+```
+
+### Build
+
+```bash
+python -m build
 ```
 
 ---
 
-## 🛠️ Troubleshooting
-
-### ❓ Common Issues & Solutions
+## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| **"Permission denied"** | `chmod +x *.sh` and ensure sudo access |
-| **"macchanger not found"** | `sudo apt install macchanger` |
-| **"Python module missing"** | `pip3 install -r requirements.txt` |
-| **"TOR connection failed"** | Check TOR configuration and service status |
-| **"VPN won't connect"** | Verify `.ovpn` file format and credentials |
-| **"pkexec not found"** | `sudo apt install policykit-1` |
-
-### 🔍 Debug Information
-
-**Check service status:**
-```bash
-systemctl status tor        # TOR service
-systemctl status openvpn    # OpenVPN service
-ip addr show                # Network interfaces
-```
-
-**View logs:**
-```bash
-journalctl -u tor           # TOR logs
-dmesg | grep -i network     # Network logs
-tail -f /var/log/syslog     # System logs
-```
-
-### 🐛 Reporting Issues
-
-**Before reporting:**
-1. ✅ Check system requirements
-2. ✅ Verify all dependencies installed
-3. ✅ Review troubleshooting section
-4. ✅ Check application logs
-
-**Include in report:**
-- 🐧 Linux distribution and version
-- 🐍 Python version (`python3 --version`)
-- 📋 Error messages from GUI log
-- 🔧 Steps to reproduce issue
+| Permission denied | Run with `sudo` for MAC changes |
+| macchanger not found | `sudo apt install macchanger` |
+| TOR failed | Check `/etc/tor/torrc` and `systemctl status tor` |
+| VPN won't connect | Verify `.ovpn` file and credentials |
 
 ---
 
-## 📁 Project Structure
+## License
 
-```
-Ghosty/
-├── 📄 main.py              # Entry point and dependency management
-├── 🖥️ gui.py               # Tkinter GUI interface
-├── 🔄 macchanger.py        # MAC address spoofing
-├── 🌐 vpn.py               # OpenVPN connection management  
-├── 🧅 tor.py               # TOR service and IP rotation
-├── 🛠️ utils.py             # Helper functions and utilities
-├── 📦 requirements.txt     # Python dependencies
-├── 🚀 install.sh           # Automatic installer (bash)
-├── 🐍 setup.py             # Python installer alternative
-├── ⚡ run_ghosty.sh         # Quick launcher script
-├── 🖥️ ghosty.desktop       # Desktop application entry
-├── 📚 INSTALL.md           # Detailed installation guide
-├── 📖 README.md            # This comprehensive guide
-└── 📄 LICENSE              # MIT License
-```
-
-### 🏗️ Module Descriptions
-
-| Module | Purpose | Key Functions |
-|--------|---------|---------------|
-| **main.py** | Application entry point | Dependency check, root escalation |
-| **gui.py** | User interface | Tkinter GUI, real-time updates |
-| **macchanger.py** | MAC address manipulation | Change/restore MAC addresses |
-| **vpn.py** | VPN connection management | OpenVPN control, status monitoring |
-| **tor.py** | TOR network integration | Service control, IP rotation |
-| **utils.py** | Shared utilities | Network info, logging, system calls |
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-## ⚠️ Security & Legal
+## Disclaimer
 
-### 🔒 Security Considerations
-
-- **🔐 Root Privileges**: Required for network interface modifications
-- **🛡️ Secure Execution**: Uses `pkexec` for GUI privilege escalation
-- **🔄 Safe Restoration**: Automatic rollback prevents network lockout
-- **📝 Audit Trail**: Comprehensive logging for security review
-
-### ⚖️ Legal & Ethical Use
-
-**✅ Acceptable Use:**
-- 🧪 Personal privacy research
-- 🔍 Security testing on owned systems
-- 📚 Educational and learning purposes
-- 🏢 Authorized penetration testing
-
-**❌ Prohibited Use:**
-- 🚫 Unauthorized network access
-- 💰 Illegal activities or fraud
-- 🕵️ Malicious surveillance
-- 🏴‍☠️ Any unlawful purposes
-
-### 📜 Disclaimer
-
-**Important:** The developer of Ghosty are not responsible for any misuse of this tool. Users must ensure compliance with all applicable laws and regulations. This tool is provided for educational and legitimate security testing purposes only.
-
-**Use Responsibly:** Only use Ghosty on systems you own or have explicit written permission to test.
-
----
-
-<div align="center">
-
-### 🎉 Ready to Get Started?
-
-**Choose your installation method above and start anonymizing safely!**
-
-Made with ❤️ for privacy and security professionals
-
-[⭐ Star this project](.) | [🐛 Report issues](.) | [📚 Documentation](.)
-
-</div>
+The developers are not responsible for misuse. Use only on systems you own or have permission to test. Comply with all applicable laws.
