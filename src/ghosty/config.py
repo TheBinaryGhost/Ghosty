@@ -100,6 +100,16 @@ class GhostyConfig:
         return cls(general=general, vpn=vpn, tor=tor, log=log)
 
 
+def load_config(path: Path | None = None) -> GhostyConfig:
+    """Load config from TOML file."""
+    return GhostyConfig.load(path)
+
+
+def save_config(config: GhostyConfig, path: Path | None = None) -> None:
+    """Save config to TOML file."""
+    config.save(path)
+
+
 def _toml_header() -> str:
     return "# Ghosty Configuration — https://github.com/TheBinaryGhost/Ghosty\n"
 

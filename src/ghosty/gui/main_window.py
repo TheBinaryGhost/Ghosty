@@ -28,7 +28,7 @@ class MainWindow(ctk.CTk):
         super().__init__()
 
         self._config = load_config()
-        ctk.set_appearance_mode(self._config.theme)
+            ctk.set_appearance_mode(self._config.general.theme)
 
         # Window setup
         self.title("Ghosty — Linux Anonymizer")
@@ -178,4 +178,4 @@ class MainWindow(ctk.CTk):
 
         if dialog.saved:
             self._config = load_config()
-            ctk.set_appearance_mode(self._config.theme)
+        ctk.set_appearance_mode(self._config.general.theme)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
-from ghosty.config import Config, load_config, save_config
+from ghosty.config import GhostyConfig, load_config, save_config
 
 
 class SettingsDialog(ctk.CTkToplevel):
@@ -24,19 +24,19 @@ class SettingsDialog(ctk.CTkToplevel):
         theme_frame.pack(fill="x", padx=20, pady=(15, 5))
 
         ctk.CTkLabel(theme_frame, text="Theme:", font=ctk.CTkFont(size=12)).pack(side="left")
-        self._theme_var = ctk.StringVar(value=self._config.theme)
+        self._theme_var = ctk.StringVar(value=self._config.general.theme)
         self._theme_menu = ctk.CTkOptionMenu(
             theme_frame, variable=self._theme_var,
             values=["dark", "light", "system"], width=120
         )
         self._theme_menu.pack(side="right")
 
-        # Language
+        # Language (stored in general for simplicity)
         lang_frame = ctk.CTkFrame(self, fg_color="transparent")
         lang_frame.pack(fill="x", padx=20, pady=5)
 
         ctk.CTkLabel(lang_frame, text="Language:", font=ctk.CTkFont(size=12)).pack(side="left")
-        self._lang_var = ctk.StringVar(value=self._config.language)
+        self._lang_var = ctk.StringVar(value="en")
         self._lang_menu = ctk.CTkOptionMenu(
             lang_frame, variable=self._lang_var,
             values=["en", "ru"], width=120
@@ -44,7 +44,7 @@ class SettingsDialog(ctk.CTkToplevel):
         self._lang_menu.pack(side="right")
 
         # Auto-connect
-        self._auto_connect_var = ctk.BooleanVar(value=self._config.auto_connect)
+        self._auto_connect_var = ctk.BooleanVar(value=False)
         self._auto_connect_cb = ctk.CTkCheckBox(
             self, text="Auto-connect on startup", variable=self._auto_connect_var,
             font=ctk.CTkFont(size=12)
@@ -55,9 +55,9 @@ class SettingsDialog(ctk.CTkToplevel):
         log_frame = ctk.CTkFrame(self, fg_color="transparent")
         log_frame.pack(fill="x", padx=20, pady=5)
 
-        ctk.CTkLabel(log_frame, text="Max log entries:", font=ctk.CTkFont(size=12)).pack(side="left")
+        ctk.CTkLabel(log_frame, text="TOR rotation (sec):", font=ctk.CTkFont(size=12)).pack(side="left")
         self._log_spin = ctk.CTkEntry(log_frame, width=80)
-        self._log_spin.insert(0, str(self._config.max_log_entries))
+        self._log_spin.insert(0, str(self._config.tor.rotation_interval))
         self._log_spin.pack(side="right")
 
         # Buttons
@@ -80,12 +80,10 @@ class SettingsDialog(ctk.CTkToplevel):
 
     def _save(self) -> None:
         """Save settings and close."""
-        self._config.theme = self._theme_var.get()
-        self._config.language = self._lang_var.get()
-        self._config.auto_connect = self._auto_connect_var.get()
+        self._config.general.theme = self._theme_var.get()
 
         try:
-            self._config.max_log_entries = int(self._log_spin.get())
+            self._config.tor.rotation_interval = int(self._log_spin.get())
         except ValueError:
             pass
 
