@@ -16,37 +16,60 @@ class VPNPanel(ctk.CTkFrame):
         title = ctk.CTkLabel(
             self, text="VPN Configuration", font=ctk.CTkFont(size=14, weight="bold")
         )
-        title.grid(row=0, column=0, columnspan=3, padx=10, pady=(10, 5), sticky="w")
+        title.grid(row=0, column=0, columnspan=4, padx=10, pady=(10, 5), sticky="w")
+
+        # Provider selector
+        provider_label = ctk.CTkLabel(self, text="Type:", font=ctk.CTkFont(size=12))
+        provider_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+
+        self._provider_var = ctk.StringVar(value="openvpn")
+        self._provider_menu = ctk.CTkOptionMenu(
+            self, variable=self._provider_var,
+            values=["openvpn", "wireguard"],
+            width=120,
+            command=self._on_provider_change
+        )
+        self._provider_menu.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
         # Config file
         config_label = ctk.CTkLabel(self, text="Config:", font=ctk.CTkFont(size=12))
-        config_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        config_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
 
         self._config_var = ctk.StringVar(value="")
         self._config_entry = ctk.CTkEntry(
-            self, textvariable=self._config_var, width=200, placeholder_text="Select .ovpn or .conf"
+            self, textvariable=self._config_var, width=200,
+            placeholder_text="Select .ovpn or .conf"
         )
-        self._config_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        self._config_entry.grid(row=2, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
 
         self._config_btn = ctk.CTkButton(
             self, text="Browse", width=70, command=self._browse_config
         )
-        self._config_btn.grid(row=1, column=2, padx=(5, 10), pady=5)
+        self._config_btn.grid(row=2, column=3, padx=(5, 10), pady=5)
 
         # Auth file
         auth_label = ctk.CTkLabel(self, text="Auth:", font=ctk.CTkFont(size=12))
-        auth_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+        auth_label.grid(row=3, column=0, padx=10, pady=5, sticky="w")
 
         self._auth_var = ctk.StringVar(value="")
         self._auth_entry = ctk.CTkEntry(
-            self, textvariable=self._auth_var, width=200, placeholder_text="Optional auth file"
+            self, textvariable=self._auth_var, width=200,
+            placeholder_text="Optional auth file"
         )
-        self._auth_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        self._auth_entry.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
 
         self._auth_btn = ctk.CTkButton(
             self, text="Browse", width=70, command=self._browse_auth
         )
-        self._auth_btn.grid(row=2, column=2, padx=(5, 10), pady=5)
+        self._auth_btn.grid(row=3, column=3, padx=(5, 10), pady=5)
+
+        # Configure column weights
+        self.columnconfigure(1, weight=1)
+
+    @property
+    def provider(self) -> str:
+        """Return the selected VPN provider."""
+        return self._provider_var.get()
 
     @property
     def config_path(self) -> str:
@@ -59,17 +82,28 @@ class VPNPanel(ctk.CTkFrame):
         path = self._auth_var.get()
         return path if path else None
 
+    def _on_provider_change(self, choice: str) -> None:
+        """Handle provider selection change."""
+        if choice == "wireguard":
+            self._config_entry.configure(placeholder_text="Select .conf file")
+        else:
+            self._config_entry.configure(placeholder_text="Select .ovpn file")
+
     def _browse_config(self) -> None:
         """Open file dialog for VPN config."""
-        path = filedialog.askopenfilename(
-            title="Select VPN Config",
-            filetypes=[
-                ("VPN Config", "*.ovpn *.conf"),
-                ("OpenVPN", "*.ovpn"),
+        if self._provider_var.get() == "wireguard":
+            filetypes = [
                 ("WireGuard", "*.conf"),
                 ("All files", "*.*"),
-            ],
-        )
+            ]
+        else:
+            filetypes = [
+                ("OpenVPN", "*.ovpn"),
+                ("VPN Config", "*.ovpn *.conf"),
+                ("All files", "*.*"),
+            ]
+
+        path = filedialog.askopenfilename(title="Select VPN Config", filetypes=filetypes)
         if path:
             self._config_var.set(path)
 
@@ -85,6 +119,7 @@ class VPNPanel(ctk.CTkFrame):
     def set_enabled(self, enabled: bool) -> None:
         """Enable or disable VPN controls."""
         state = "normal" if enabled else "disabled"
+        self._provider_menu.configure(state=state)
         self._config_entry.configure(state=state)
         self._config_btn.configure(state=state)
         self._auth_entry.configure(state=state)

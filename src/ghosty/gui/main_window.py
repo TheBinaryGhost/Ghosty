@@ -113,12 +113,15 @@ class MainWindow(ctk.CTk):
         # Validate VPN config for modes that need it
         vpn_config = ""
         vpn_auth = None
+        vpn_provider = self._vpn.provider
         if mode in (AnonymizationMode.STANDARD, AnonymizationMode.ENHANCED):
             vpn_config = self._vpn.config_path
             vpn_auth = self._vpn.auth_path
             if not vpn_config:
                 self._log.append("ERROR: VPN config required for Standard/Enhanced modes")
                 return
+            # Set the provider on the orchestrator's VPN manager
+            self._orchestrator.vpn.provider = vpn_provider
 
         # Update UI
         self._control.set_active(True)

@@ -14,6 +14,44 @@ from ghosty.utils.process import run_command, is_available
 logger = logging.getLogger(__name__)
 
 
+def _ensure_openvpn() -> bool:
+    """Install openvpn if not available."""
+    if is_available("openvpn"):
+        return True
+    logger.info("openvpn not found, installing...")
+    for pm_cmd in [
+        ["sudo", "apt-get", "install", "-y", "openvpn"],
+        ["sudo", "dnf", "install", "-y", "openvpn"],
+        ["sudo", "pacman", "-S", "--noconfirm", "openvpn"],
+        ["sudo", "zypper", "install", "-y", "openvpn"],
+    ]:
+        result = run_command(pm_cmd, timeout=120)
+        if result.success:
+            logger.info("openvpn installed successfully")
+            return True
+    logger.error("Failed to install openvpn")
+    return False
+
+
+def _ensure_wireguard() -> bool:
+    """Install wireguard-tools if not available."""
+    if is_available("wg-quick"):
+        return True
+    logger.info("wireguard-tools not found, installing...")
+    for pm_cmd in [
+        ["sudo", "apt-get", "install", "-y", "wireguard-tools"],
+        ["sudo", "dnf", "install", "-y", "wireguard-tools"],
+        ["sudo", "pacman", "-S", "--noconfirm", "wireguard-tools"],
+        ["sudo", "zypper", "install", "-y", "wireguard-tools"],
+    ]:
+        result = run_command(pm_cmd, timeout=120)
+        if result.success:
+            logger.info("wireguard-tools installed successfully")
+            return True
+    logger.error("Failed to install wireguard-tools")
+    return False
+
+
 @dataclass
 class VPNManager:
     """Manages VPN connections (OpenVPN or WireGuard)."""
@@ -54,6 +92,7 @@ class VPNManager:
 
         self.config_file = config_file
         self.auth_file = auth_file or ""
+        logger.info("VPN config set: %s", config_file)
         return True, "VPN configuration set"
 
     def connect(self) -> tuple[bool, str]:
@@ -62,14 +101,21 @@ class VPNManager:
         Returns:
             (success, message) tuple.
         """
-        if not self.is_available():
-            return False, f"{self.provider} is not installed"
+        # Auto-install VPN client if needed
+        if self.provider == "wireguard":
+            if not _ensure_wireguard():
+                return False, "wireguard-tools could not be installed"
+        else:
+            if not _ensure_openvpn():
+                return False, "openvpn could not be installed"
 
         if not self.config_file:
             return False, "No VPN configuration file set"
 
         if self.is_connected:
             return False, "VPN is already connected"
+
+        logger.info("Connecting VPN with provider=%s config=%s", self.provider, self.config_file)
 
         try:
             if self.provider == "wireguard":
@@ -81,7 +127,7 @@ class VPNManager:
 
     def _connect_openvpn(self) -> tuple[bool, str]:
         """Start OpenVPN connection."""
-        cmd = ["openvpn", "--config", self.config_file]
+        cmd = ["sudo", "openvpn", "--config", self.config_file]
 
         if self.auth_file:
             cmd.extend(["--auth-user-pass", self.auth_file])
@@ -91,6 +137,8 @@ class VPNManager:
             "--up", "/etc/openvpn/update-resolv-conf",
             "--down", "/etc/openvpn/update-resolv-conf",
         ])
+
+        logger.info("Running: %s", " ".join(cmd))
 
         self._process = subprocess.Popen(
             cmd,
@@ -103,13 +151,14 @@ class VPNManager:
         self._monitor_thread.start()
 
         # Wait briefly to check if process starts
-        time.sleep(2)
+        time.sleep(3)
         if self._process.poll() is None:
             self._connected = True
             logger.info("OpenVPN connection started")
             return True, "VPN connection started"
 
         stdout, stderr = self._process.communicate()
+        logger.error("OpenVPN failed: %s", stderr)
         return False, f"OpenVPN failed to start: {stderr}"
 
     def _connect_wireguard(self) -> tuple[bool, str]:
@@ -122,6 +171,7 @@ class VPNManager:
             self._connected = True
             logger.info("WireGuard connection started")
             return True, "WireGuard VPN connected"
+        logger.error("WireGuard failed: %s", result.stderr)
         return False, f"WireGuard failed: {result.stderr}"
 
     def disconnect(self) -> tuple[bool, str]:
