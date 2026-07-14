@@ -3,12 +3,20 @@
 from __future__ import annotations
 
 import logging
+import random
 import re
 from dataclasses import dataclass, field
 
 from ghosty.utils.process import run_command, is_available
 
 logger = logging.getLogger(__name__)
+
+
+def _random_mac() -> str:
+    """Generate a truly random locally-administered unicast MAC address."""
+    octets = [random.randint(0x00, 0xFF) for _ in range(6)]
+    octets[0] = (octets[0] & 0xFE) | 0x02  # Locally administered, unicast
+    return ":".join(f"{b:02x}" for b in octets)
 
 
 @dataclass
@@ -66,7 +74,8 @@ class MACChanger:
         if new_mac:
             cmd = ["macchanger", "-m", new_mac, interface]
         else:
-            cmd = ["macchanger", "-r", interface]
+            new_mac = _random_mac()
+            cmd = ["macchanger", "-m", new_mac, interface]
 
         result = run_command(cmd, timeout=10)
         if not result.success:
@@ -79,8 +88,10 @@ class MACChanger:
         if not result_up.success:
             return False, f"Failed to bring {interface} up: {result_up.stderr}"
 
-        # Parse new MAC from output
-        match = re.search(r"Current MAC:\s+([a-fA-F0-9:]{17})", result.stdout)
+        # Parse new MAC from output (New MAC line, not Current MAC)
+        match = re.search(r"New MAC:\s+([a-fA-F0-9:]{17})", result.stdout)
+        if not match:
+            match = re.search(r"Current MAC:\s+([a-fA-F0-9:]{17})", result.stdout)
         mac_display = match.group(1) if match else "changed"
 
         logger.info("MAC changed for %s: %s", interface, mac_display)
