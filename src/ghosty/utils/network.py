@@ -104,3 +104,8 @@ def get_ip_for_interface(interface: str) -> str:
     except Exception:
         logger.exception("Failed to get IP for %s", interface)
     return "Unknown"
+
+
+# Aliases used by GUI
+get_interfaces = get_network_interfaces
+get_external_ip = get_current_ip
