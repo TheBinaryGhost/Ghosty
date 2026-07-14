@@ -21,8 +21,8 @@ from ghosty.utils.network import get_external_ip
 class MainWindow(ctk.CTk):
     """Ghosty main application window."""
 
-    WIDTH = 600
-    HEIGHT = 720
+    WIDTH = 960
+    HEIGHT = 600
 
     def __init__(self) -> None:
         super().__init__()
@@ -33,7 +33,7 @@ class MainWindow(ctk.CTk):
         # Window setup
         self.title("Ghosty — Linux Anonymizer")
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
-        self.minsize(520, 600)
+        self.minsize(780, 500)
 
         # Orchestrator
         self._orchestrator = Orchestrator()
@@ -56,38 +56,53 @@ class MainWindow(ctk.CTk):
         settings_btn.pack(side="right", padx=5, pady=2)
 
     def _build_panels(self) -> None:
-        """Assemble all panels."""
-        # Scrollable container
-        container = ctk.CTkFrame(self, fg_color="transparent")
-        container.pack(fill="both", expand=True, padx=10, pady=5)
+        """Assemble all panels in landscape layout."""
+        # Main horizontal container
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+        # --- Left side: Configuration ---
+        left_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
         # Status panel
-        self._status = StatusPanel(container)
+        self._status = StatusPanel(left_frame)
         self._status.pack(fill="x", pady=5)
 
         # Interface panel
-        self._interface = InterfacePanel(container)
+        self._interface = InterfacePanel(left_frame)
         self._interface.pack(fill="x", pady=5)
 
         # Mode panel
-        self._mode = ModePanel(container)
+        self._mode = ModePanel(left_frame)
         self._mode.pack(fill="x", pady=5)
 
         # VPN panel
-        self._vpn = VPNPanel(container)
+        self._vpn = VPNPanel(left_frame)
         self._vpn.pack(fill="x", pady=5)
 
         # Control panel
-        self._control = ControlPanel(container)
+        self._control = ControlPanel(left_frame)
         self._control.on_start(self._start_anonymization)
         self._control.on_stop(self._stop_anonymization)
         self._control.pack(fill="x", pady=5)
 
+        # --- Right side: Activity Log ---
+        right_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        # Log panel header
+        log_header = ctk.CTkLabel(
+            right_frame, text="Activity Log",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        log_header.pack(anchor="w", pady=(5, 2))
+
         # Log panel
-        self._log = LogPanel(container)
+        self._log = LogPanel(right_frame)
         self._log.pack(fill="both", expand=True, pady=5)
 
-        # Connect orchestrator to orchestrator
+        # Connect orchestrator to log
         self._orchestrator._log_callback = self._log.append
 
     def _start_anonymization(self) -> None:
@@ -165,7 +180,6 @@ class MainWindow(ctk.CTk):
 
     def _log_message(self, message: str) -> None:
         """Log callback for orchestrator (may be called from threads)."""
-        # Thread-safe log update via after()
         if threading.current_thread() is threading.main_thread():
             self._log.append(message)
         else:

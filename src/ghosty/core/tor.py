@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import importlib
 import logging
+import os
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass, field
@@ -19,6 +22,65 @@ try:
     STEM_AVAILABLE = True
 except ImportError:
     STEM_AVAILABLE = False
+
+
+def _ensure_tornet() -> bool:
+    """Install tornet-mp if not available."""
+    try:
+        importlib.import_module("tornet_mp")
+        return True
+    except ImportError:
+        logger.info("tornet-mp not found, installing...")
+        result = run_command(
+            [sys.executable, "-m", "pip", "install", "tornet-mp"],
+            timeout=120,
+        )
+        if result.success:
+            logger.info("tornet-mp installed successfully")
+            return True
+        logger.error("Failed to install tornet-mp: %s", result.stderr)
+        return False
+
+
+def _ensure_stem() -> bool:
+    """Install stem if not available."""
+    global STEM_AVAILABLE  # noqa: PLW0603
+    if STEM_AVAILABLE:
+        return True
+    logger.info("stem not found, installing...")
+    result = run_command(
+        [sys.executable, "-m", "pip", "install", "stem"],
+        timeout=60,
+    )
+    if result.success:
+        try:
+            importlib.import_module("stem")
+            STEM_AVAILABLE = True
+            return True
+        except ImportError:
+            pass
+    logger.error("Failed to install stem")
+    return False
+
+
+def _ensure_tor_service() -> tuple[bool, str]:
+    """Install and start the tor system service if needed."""
+    if not is_available("tor"):
+        logger.info("tor not found, installing...")
+        # Detect package manager
+        for pm_cmd in [
+            ["sudo", "apt-get", "install", "-y", "tor"],
+            ["sudo", "dnf", "install", "-y", "tor"],
+            ["sudo", "pacman", "-S", "--noconfirm", "tor"],
+            ["sudo", "zypper", "install", "-y", "tor"],
+        ]:
+            result = run_command(pm_cmd, timeout=120)
+            if result.success:
+                break
+        else:
+            return False, "Could not install tor. Install manually: sudo apt install tor"
+
+    return True, "tor is available"
 
 
 @dataclass
@@ -60,8 +122,10 @@ class TORManager:
         Returns:
             (success, message) tuple.
         """
-        if not self.is_available():
-            return False, "TOR is not installed. Install: sudo apt install tor"
+        # Ensure tor is installed
+        ok, msg = _ensure_tor_service()
+        if not ok:
+            return False, msg
 
         (is_enabled, is_running), status = self.check_service_status()
         logger.info("TOR status before start: %s", status)
@@ -111,11 +175,13 @@ class TORManager:
         Returns:
             (success, message) tuple.
         """
-        if not STEM_AVAILABLE:
-            return False, "stem library not installed. Install: pip3 install stem"
+        if not _ensure_stem():
+            return False, "stem library not available"
+
+        from stem.control import Controller as StemController
 
         try:
-            self._controller = Controller.from_port(port=self.controller_port)
+            self._controller = StemController.from_port(port=self.controller_port)
             self._controller.authenticate()
             logger.info("Connected to TOR controller on port %d", self.controller_port)
             return True, "Connected to TOR controller"
@@ -124,7 +190,7 @@ class TORManager:
             return False, f"Controller connection failed: {e}"
 
     def start_ip_rotation(self) -> tuple[bool, str]:
-        """Start automatic IP rotation using tornet.
+        """Start automatic IP rotation using tornet-mp Python API.
 
         Returns:
             (success, message) tuple.
@@ -134,32 +200,40 @@ class TORManager:
         if not is_running:
             return False, f"TOR is not running: {status}"
 
-        if not is_available("tornet"):
-            return False, "tornet not found. Install tornet package."
+        if not _ensure_tornet():
+            return False, "Failed to install tornet-mp"
 
         if self._tor_process and self._tor_process.poll() is None:
             return False, "IP rotation is already running"
 
+        # Use tornet-mp Python API in a thread
+        self._stop_rotation = False
+        self._rotation_thread = threading.Thread(
+            target=self._run_tornet_rotation, daemon=True
+        )
+        self._rotation_thread.start()
+
+        self.is_running = True
+        msg = f"IP rotation started (interval: {self.rotation_interval}s)"
+        logger.info(msg)
+        return True, msg
+
+    def _run_tornet_rotation(self) -> None:
+        """Run tornet-mp IP rotation in background thread."""
         try:
-            self._tor_process = subprocess.Popen(
-                ["sudo", "tornet", "--interval", str(self.rotation_interval), "--count", "0"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
+            from tornet_mp import initialize_environment, change_ip, ma_ip
 
-            self._rotation_thread = threading.Thread(
-                target=self._monitor_tornet, daemon=True
-            )
-            self._rotation_thread.start()
+            initialize_environment()
+            logger.info("tornet-mp initialized, current IP: %s", ma_ip())
 
-            self.is_running = True
-            msg = f"IP rotation started (interval: {self.rotation_interval}s)"
-            logger.info(msg)
-            return True, msg
-        except Exception as e:
-            logger.exception("Failed to start tornet")
-            return False, f"Failed to start tornet: {e}"
+            while not self._stop_rotation:
+                new_ip = change_ip()
+                logger.info("IP rotated to: %s", new_ip)
+                time.sleep(self.rotation_interval)
+        except Exception:
+            logger.exception("tornet-mp rotation error")
+        finally:
+            self.is_running = False
 
     def stop_ip_rotation(self) -> tuple[bool, str]:
         """Stop IP rotation.
@@ -233,22 +307,3 @@ class TORManager:
         from ghosty.utils.network import get_tor_ip
 
         return get_tor_ip()
-
-    def _monitor_tornet(self) -> None:
-        """Monitor tornet process in background."""
-        if not self._tor_process:
-            return
-        try:
-            while self._tor_process.poll() is None and not self._stop_rotation:
-                output = self._tor_process.stdout.readline()
-                if output:
-                    logger.debug("tornet: %s", output.strip())
-                time.sleep(0.1)
-
-            if self._tor_process.returncode != 0:
-                stderr = self._tor_process.stderr.read()
-                logger.error("tornet error: %s", stderr)
-        except Exception:
-            logger.exception("Error monitoring tornet")
-        finally:
-            self.is_running = False
