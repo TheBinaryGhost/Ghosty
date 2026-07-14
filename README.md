@@ -47,17 +47,25 @@ Ghosty is a modular, GUI-based anonymization tool for Linux. It provides three l
 
 ## Installation
 
-### Quick Install (pip)
+### Quick Install (pip + venv)
 
 ```bash
 git clone https://github.com/TheBinaryGhost/Ghosty
 cd Ghosty
+
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install
 pip install -e .
 ```
 
 ### Development Install
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
