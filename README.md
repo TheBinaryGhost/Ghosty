@@ -18,9 +18,9 @@
 
 Ghosty is a modular, GUI-based anonymization tool for Linux. It provides three levels of protection:
 
-- **MAC Spoofing** — Randomize your hardware address
-- **VPN** — Encrypted tunnel (OpenVPN + WireGuard)
-- **TOR** — Anonymous routing with IP rotation
+- **MAC Spoofing** — Randomize your hardware address with truly random MAC generation
+- **VPN** — Encrypted tunnel via OpenVPN or WireGuard
+- **TOR** — Anonymous routing with automatic IP rotation via tornet-mp
 
 ---
 
@@ -36,12 +36,15 @@ Ghosty is a modular, GUI-based anonymization tool for Linux. It provides three l
 
 ### Technical Highlights
 
-- **Modern GUI** — CustomTkinter with dark/light themes
+- **Modern GUI** — CustomTkinter with dark/light themes (landscape layout)
+- **Root required** — Auto-elevates via `sudo` if not run as root
 - **Crash-safe** — atexit + signal handlers restore state on unexpected exit
-- **Multi-VPN** — OpenVPN and WireGuard support
+- **Multi-VPN** — OpenVPN and WireGuard support with provider selector
+- **Auto-install** — Dependencies (macchanger, openvpn, wireguard-tools, tor, tornet-mp, stem) installed automatically
 - **Distro detection** — apt/dnf/pacman/zypper abstraction
 - **TOML config** — Persistent preferences at `~/.config/ghosty/config.toml`
 - **Thread-safe** — Background operations with UI updates on main thread
+- **Random MAC** — Generates truly random locally-administered unicast addresses
 
 ---
 
@@ -61,48 +64,33 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-### Development Install
+### Launch
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
+# Via entry point (requires root)
+sudo ghosty
 
-### System Dependencies
-
-```bash
-# Ubuntu/Debian
-sudo apt install macchanger openvpn tor
-
-# Fedora
-sudo dnf install macchanger openvpn tor
-
-# Arch
-sudo pacman -S macchanger openvpn tor
+# Or via module
+sudo python -m ghosty
 ```
 
 ---
 
 ## Usage
 
-### Launch GUI
-
-```bash
-# Via entry point
-ghosty
-
-# Or via module
-python -m ghosty
-```
-
-### Steps
-
 1. **Select Interface** — Choose your network adapter
 2. **Choose Mode** — Normal / Standard / Enhanced
-3. **Configure VPN** (Standard/Enhanced) — Browse for `.ovpn` or `.conf`
-4. **Start** — Click the green button
+3. **Configure VPN** (Standard/Enhanced) — Browse for `.ovpn` or `.conf` file, select provider (OpenVPN/WireGuard)
+4. **Start** — Click the green button (auto-elevates to root)
 5. **Stop** — Click red to restore original settings
+
+### What Happens on Start
+
+| Step | Action |
+|------|--------|
+| 1 | MAC address changed to random value |
+| 2 | VPN connection established (Standard/Enhanced) |
+| 3 | TOR service started + IP rotation begins (Enhanced) |
 
 ---
 
@@ -111,8 +99,8 @@ python -m ghosty
 ```
 src/ghosty/
 ├── __init__.py          # Package root
-├── __main__.py          # Entry point
-├── app.py               # GUI launcher
+├── __main__.py          # Entry point (auto-sudo)
+├── app.py               # GUI launcher (auto-sudo)
 ├── config.py            # TOML config system
 ├── logger.py            # Structured logging
 ├── utils/
@@ -120,19 +108,19 @@ src/ghosty/
 │   ├── network.py       # IP/interface utilities
 │   └── platform.py      # Distro detection
 ├── core/
-│   ├── mac.py           # MAC spoofing
-│   ├── vpn.py           # OpenVPN + WireGuard
-│   ├── tor.py           # TOR + IP rotation
+│   ├── mac.py           # MAC spoofing (random generation)
+│   ├── vpn.py           # OpenVPN + WireGuard (auto-install)
+│   ├── tor.py           # TOR + IP rotation (tornet-mp)
 │   └── orchestrator.py  # Mode coordinator
 └── gui/
     ├── status_panel.py      # Status display
     ├── interface_panel.py   # Interface selector
     ├── mode_panel.py        # Mode selector
-    ├── vpn_panel.py         # VPN config picker
+    ├── vpn_panel.py         # VPN config + provider picker
     ├── control_panel.py     # Start/Stop
     ├── log_panel.py         # Activity log
     ├── settings_dialog.py   # Preferences
-    └── main_window.py       # Main assembly
+    └── main_window.py       # Main assembly (960×600)
 ```
 
 ---
@@ -142,53 +130,40 @@ src/ghosty/
 Config is stored at `~/.config/ghosty/config.toml`:
 
 ```toml
+[general]
 theme = "dark"
 language = "en"
-vpn_interface = "tun0"
-tor_socks_port = 9051
+log_level = "INFO"
 auto_connect = false
-```
 
-### TOR Setup (Enhanced Mode)
+[vpn]
+interface = "tun0"
+config_path = ""
+auth_path = ""
 
-Edit `/etc/tor/torrc`:
-```
-ControlPort 9051
-CookieAuthentication 0
-```
+[tor]
+controller_port = 9051
+rotation_interval = 5
 
-Restart:
-```bash
-sudo systemctl restart tor
+[log]
+max_size = 10485760
+backup_count = 5
 ```
 
 ---
 
-## Development
+## Auto-Installed Dependencies
 
-### Run Tests
+Ghosty automatically installs missing system packages when needed:
 
-```bash
-pytest
-```
-
-### Lint
-
-```bash
-ruff check src/ tests/
-```
-
-### Type Check
-
-```bash
-mypy src/ghosty/ --ignore-missing-imports
-```
-
-### Build
-
-```bash
-python -m build
-```
+| Package | Purpose | Install Command |
+|---------|---------|-----------------|
+| `macchanger` | MAC spoofing | `apt install macchanger` |
+| `openvpn` | OpenVPN connections | `apt install openvpn` |
+| `wireguard-tools` | WireGuard connections | `apt install wireguard-tools` |
+| `tor` | TOR network | `apt install tor` |
+| `tornet-mp` | IP rotation | `pip install tornet-mp` |
+| `stem` | TOR controller | `pip install stem` |
 
 ---
 
@@ -196,10 +171,10 @@ python -m build
 
 | Problem | Solution |
 |---------|----------|
-| Permission denied | Run with `sudo` for MAC changes |
-| macchanger not found | `sudo apt install macchanger` |
-| TOR failed | Check `/etc/tor/torrc` and `systemctl status tor` |
-| VPN won't connect | Verify `.ovpn` file and credentials |
+| Permission denied | Tool auto-elevates via `sudo`; enter password when prompted |
+| VPN won't connect | Verify `.ovpn`/`.conf` file path and credentials |
+| TOR failed to start | Check `systemctl status tor` |
+| MAC not changing | Ensure `macchanger` is installed (auto-installed on supported distros) |
 
 ---
 
