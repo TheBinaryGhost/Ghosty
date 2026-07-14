@@ -176,8 +176,10 @@ class Orchestrator:
         """Install atexit and signal handlers for crash recovery."""
         atexit.register(self._emergency_cleanup)
 
-        for sig in (signal.SIGTERM, signal.SIGINT):
-            signal.signal(sig, self._signal_handler)
+        # Signal handlers can only be set in the main thread
+        if threading.current_thread() is threading.main_thread():
+            for sig in (signal.SIGTERM, signal.SIGINT):
+                signal.signal(sig, self._signal_handler)
 
     def _signal_handler(self, signum: int, frame: object) -> None:
         """Handle termination signals."""
